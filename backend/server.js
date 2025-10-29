@@ -11,6 +11,9 @@ const PORT = process.env.PORT || 10000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'feedback.json');
 
+// Path to React frontend build
+const FRONTEND_BUILD_DIR = path.join(__dirname, 'frontend', 'build');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -41,10 +44,7 @@ async function writeFeedback(data) {
   await fs.writeFile(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('🎓 Student Feedback API is running successfully!');
-});
+// API ROUTES
 
 // POST API - Add feedback
 app.post('/api/feedback', async (req, res) => {
@@ -123,9 +123,7 @@ app.get('/api/stats', async (req, res) => {
     const total = feedback.length;
     const averageRating =
       total > 0
-        ? (
-            feedback.reduce((sum, f) => sum + f.rating, 0) / total
-          ).toFixed(2)
+        ? (feedback.reduce((sum, f) => sum + f.rating, 0) / total).toFixed(2)
         : 0;
     res.json({ totalFeedback: total, averageRating });
   } catch (error) {
@@ -139,8 +137,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
+// ----------------------
+// Serve React Frontend
+// ----------------------
+app.use(express.static(FRONTEND_BUILD_DIR));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(FRONTEND_BUILD_DIR, 'index.html'));
+});
+
+// ----------------------
+// Start Server
+// ----------------------
 app.listen(PORT, async () => {
   await ensureDatabaseFile();
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`📁 JSON database file: ${DB_FILE}`);
+  console.log(`📦 Serving React frontend from: ${FRONTEND_BUILD_DIR}`);
 });
